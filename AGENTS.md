@@ -4,11 +4,12 @@
 - FastAPI-based RAG service using Gemini for embeddings + chat completions and ChromaDB for persistent vector storage.
 
 ## Runtime
-- App entry: `app/main.py` with endpoints `/health`, `/ingest`, `/query`.
+- App entry: `app/main.py` with endpoints `/health`, `/ingest`, `/ingest-pdf`, `/query`.
 - Start: `uvicorn app.main:app --reload`.
 
 ## Data flow
 - Ingest: `/ingest` -> `app.rag.service.ingest_documents` -> embed texts with Gemini -> store in Chroma collection.
+- PDF ingest: `/ingest-pdf` -> extract text per page -> embed texts with Gemini -> store in Chroma collection.
 - Query: `/query` -> embed query -> Chroma similarity search -> build context -> Gemini chat completion -> return answer + sources.
 
 ## Config
@@ -25,6 +26,7 @@
 - `app/schemas.py`: request/response models.
 - `app/rag/service.py`: ingest/query logic and Gemini chat.
 - `app/rag/embeddings.py`: Gemini embeddings.
+- `app/rag/pdf.py`: PDF text extraction.
 - `app/rag/vectorstore.py`: Chroma persistence and search.
 - `requirements.txt`: fastapi, uvicorn, pydantic, openai, chromadb.
 

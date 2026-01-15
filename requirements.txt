@@ -5,3 +5,5 @@ pydantic-settings
 python-dotenv
 google-generativeai
 chromadb
+python-multipart
+pypdf

@@ -23,15 +23,18 @@ def add_documents(
     ids: list[str],
     texts: list[str],
     embeddings: list[list[float]],
-    metadatas: list[dict[str, Any]],
+    metadatas: list[dict[str, Any]] | None,
 ) -> None:
     collection = get_collection()
-    collection.add(
-        ids=ids,
-        documents=texts,
-        embeddings=embeddings,
-        metadatas=metadatas,
-    )
+    if metadatas is None:
+        collection.add(ids=ids, documents=texts, embeddings=embeddings)
+    else:
+        collection.add(
+            ids=ids,
+            documents=texts,
+            embeddings=embeddings,
+            metadatas=metadatas,
+        )
 
 
 def query_by_embedding(embedding: list[float], top_k: int):
@@ -39,5 +42,5 @@ def query_by_embedding(embedding: list[float], top_k: int):
     return collection.query(
         query_embeddings=[embedding],
         n_results=top_k,
-        include=["documents", "metadatas", "distances", "ids"],
+        include=["documents", "metadatas", "distances"],
     )

@@ -20,6 +20,7 @@ uvicorn app.main:app --reload
 
 - `GET /health`
 - `POST /ingest`
+- `POST /ingest-pdf`
 - `POST /query`
 
 ## Example ingest payload
@@ -39,4 +40,13 @@ uvicorn app.main:app --reload
 {
   "query": "What is RAG?"
 }
+```
+
+## Example PDF upload
+
+```bash
+curl -X POST "http://127.0.0.1:8000/ingest-pdf" ^
+  -H "accept: application/json" ^
+  -H "Content-Type: multipart/form-data" ^
+  -F "file=@C:\\path\\to\\document.pdf"
 ```

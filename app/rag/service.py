@@ -6,6 +6,7 @@ import google.generativeai as genai
 
 from app.core.config import settings
 from app.rag.embeddings import embed_texts
+from app.rag.pdf import extract_text_by_page
 from app.rag.vectorstore import add_documents, query_by_embedding
 from app.schemas import DocumentIn, QueryResponse, Source
 
@@ -21,16 +22,39 @@ def ingest_documents(documents: list[DocumentIn]) -> list[str]:
     ids: list[str] = []
     texts: list[str] = []
     metadatas: list[dict[str, object]] = []
+    include_metadata = any(doc.metadata for doc in documents)
 
     for doc in documents:
         doc_id = doc.id or uuid4().hex
         ids.append(doc_id)
         texts.append(doc.text)
-        metadatas.append(doc.metadata or {})
+        if include_metadata:
+            metadata = doc.metadata or {"_missing": True}
+            metadatas.append(metadata)
 
     embeddings = embed_texts(texts)
-    add_documents(ids=ids, texts=texts, embeddings=embeddings, metadatas=metadatas)
+    add_documents(
+        ids=ids,
+        texts=texts,
+        embeddings=embeddings,
+        metadatas=metadatas if include_metadata else None,
+    )
     return ids
+
+
+def ingest_pdf_bytes(filename: str, pdf_bytes: bytes) -> list[str]:
+    pages = extract_text_by_page(pdf_bytes)
+    documents: list[DocumentIn] = []
+    for index, text in enumerate(pages, start=1):
+        documents.append(
+            DocumentIn(
+                text=text,
+                metadata={"source": filename, "page": index},
+            )
+        )
+    if not documents:
+        return []
+    return ingest_documents(documents)
 
 
 def answer_query(query: str, top_k: int | None = None) -> QueryResponse:
