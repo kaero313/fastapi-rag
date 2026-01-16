@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     chroma_persist_dir: str = "data/chroma"
     chroma_collection: str = "rag"
     top_k: int = 4
+    ingest_base_dir: str = "data/ingest"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

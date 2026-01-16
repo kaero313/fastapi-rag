@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RAG Chat</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="backdrop">
+      <div class="orb orb-a"></div>
+      <div class="orb orb-b"></div>
+      <div class="grid"></div>
+    </div>
+    <main class="app">
+      <header class="hero">
+        <div class="brand">
+          <div class="logo">RAG</div>
+          <div class="brand-text">
+            <h1>RAG Chat</h1>
+            <p>Ask your documents. Gemini handles the answers.</p>
+          </div>
+        </div>
+        <div class="status" id="status">
+          <span class="dot"></span>
+          <span class="label">checking</span>
+        </div>
+      </header>
+      <section class="chat">
+        <div id="messages" class="messages">
+          <div class="message assistant intro">
+            <div class="bubble">
+              <div class="role">assistant</div>
+              <div class="text">
+                Drop a question to start. Example: "What is RAG?"
+              </div>
+            </div>
+          </div>
+        </div>
+        <form id="composer" class="composer">
+          <div class="controls">
+            <label class="control">
+              <span>top_k</span>
+              <input id="topK" type="number" min="1" max="12" value="4" />
+            </label>
+            <button type="button" class="ghost" id="clear">Clear</button>
+          </div>
+          <div class="input-row">
+            <textarea
+              id="prompt"
+              rows="2"
+              placeholder="Ask a question about your documents..."
+            ></textarea>
+            <button type="submit" id="send">Send</button>
+          </div>
+          <div class="hint">Shift+Enter for a new line.</div>
+        </form>
+      </section>
+    </main>
+    <script src="/static/app.js"></script>
+  </body>
+</html>

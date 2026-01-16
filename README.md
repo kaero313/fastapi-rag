@@ -21,6 +21,8 @@ uvicorn app.main:app --reload
 - `GET /health`
 - `POST /ingest`
 - `POST /ingest-pdf`
+- `POST /ingest-json`
+- `POST /ingest-dir`
 - `POST /query`
 
 ## Example ingest payload
@@ -50,3 +52,25 @@ curl -X POST "http://127.0.0.1:8000/ingest-pdf" ^
   -H "Content-Type: multipart/form-data" ^
   -F "file=@C:\\path\\to\\document.pdf"
 ```
+
+## Example JSON upload
+
+```bash
+curl -X POST "http://127.0.0.1:8000/ingest-json" ^
+  -H "accept: application/json" ^
+  -H "Content-Type: multipart/form-data" ^
+  -F "file=@C:\\path\\to\\data.json"
+```
+
+## Example directory ingest
+
+```json
+{
+  "directory": ".",
+  "recursive": true,
+  "extensions": ["pdf", "json", "txt", "md"]
+}
+```
+
+`/ingest-dir` reads files under `INGEST_BASE_DIR` (default: `data/ingest`).
+Set `directory` to `"."` to ingest the base folder.

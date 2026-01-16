@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+from pathlib import Path
 from uuid import uuid4
 
 import google.generativeai as genai
 
 from app.core.config import settings
+from app.rag.directory_ingest import load_documents_from_directory
 from app.rag.embeddings import embed_texts
+from app.rag.json_ingest import parse_json_documents
 from app.rag.pdf import extract_text_by_page
 from app.rag.vectorstore import add_documents, query_by_embedding
 from app.schemas import DocumentIn, QueryResponse, Source
@@ -55,6 +58,31 @@ def ingest_pdf_bytes(filename: str, pdf_bytes: bytes) -> list[str]:
     if not documents:
         return []
     return ingest_documents(documents)
+
+
+def ingest_json_bytes(filename: str, json_bytes: bytes) -> list[str]:
+    documents = parse_json_documents(filename, json_bytes)
+    if not documents:
+        return []
+    return ingest_documents(documents)
+
+
+def ingest_directory(
+    directory: Path,
+    recursive: bool = True,
+    extensions: list[str] | None = None,
+    base_dir: Path | None = None,
+) -> tuple[list[str], dict[str, object]]:
+    documents, stats = load_documents_from_directory(
+        directory,
+        recursive=recursive,
+        extensions=extensions,
+        base_dir=base_dir,
+    )
+    if not documents:
+        return [], stats
+    ids = ingest_documents(documents)
+    return ids, stats
 
 
 def answer_query(query: str, top_k: int | None = None) -> QueryResponse:

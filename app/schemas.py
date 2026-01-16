@@ -18,6 +18,12 @@ class QueryRequest(BaseModel):
     top_k: int | None = None
 
 
+class IngestDirectoryRequest(BaseModel):
+    directory: str
+    recursive: bool = True
+    extensions: list[str] | None = None
+
+
 class Source(BaseModel):
     id: str
     score: float

@@ -4,18 +4,20 @@
 - FastAPI-based RAG service using Gemini for embeddings + chat completions and ChromaDB for persistent vector storage.
 
 ## Runtime
-- App entry: `app/main.py` with endpoints `/health`, `/ingest`, `/ingest-pdf`, `/query`.
+- App entry: `app/main.py` with endpoints `/health`, `/ingest`, `/ingest-pdf`, `/ingest-json`, `/ingest-dir`, `/query`.
 - Start: `uvicorn app.main:app --reload`.
 
 ## Data flow
 - Ingest: `/ingest` -> `app.rag.service.ingest_documents` -> embed texts with Gemini -> store in Chroma collection.
 - PDF ingest: `/ingest-pdf` -> extract text per page -> embed texts with Gemini -> store in Chroma collection.
+- JSON ingest: `/ingest-json` -> parse JSON to documents -> embed texts with Gemini -> store in Chroma collection.
+- Directory ingest: `/ingest-dir` -> scan files in `INGEST_BASE_DIR` -> parse (pdf/json/text) -> embed -> store.
 - Query: `/query` -> embed query -> Chroma similarity search -> build context -> Gemini chat completion -> return answer + sources.
 
 ## Config
 - `app/core/config.py` (pydantic-settings) reads `.env`.
-- Key env vars: `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_EMBEDDING_MODEL`, `CHROMA_PERSIST_DIR`, `CHROMA_COLLECTION`, `TOP_K`.
-- Defaults: model `gemini-1.5-flash`, embedding `text-embedding-004`, persist `data/chroma`, collection `rag`, top_k `4`.
+- Key env vars: `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_EMBEDDING_MODEL`, `CHROMA_PERSIST_DIR`, `CHROMA_COLLECTION`, `TOP_K`, `INGEST_BASE_DIR`.
+- Defaults: model `gemini-1.5-flash`, embedding `text-embedding-004`, persist `data/chroma`, collection `rag`, top_k `4`, ingest base `data/ingest`.
 
 ## Storage
 - Chroma persistent client at `data/chroma` (relative path by default).
@@ -27,6 +29,8 @@
 - `app/rag/service.py`: ingest/query logic and Gemini chat.
 - `app/rag/embeddings.py`: Gemini embeddings.
 - `app/rag/pdf.py`: PDF text extraction.
+- `app/rag/json_ingest.py`: JSON parsing for ingest.
+- `app/rag/directory_ingest.py`: Directory scan + file parsing.
 - `app/rag/vectorstore.py`: Chroma persistence and search.
 - `requirements.txt`: fastapi, uvicorn, pydantic, openai, chromadb.
 

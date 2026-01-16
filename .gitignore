@@ -7,5 +7,6 @@ __pycache__/
 *.pyc
 
 data/chroma/
+data/ingest/
 chroma/
 .chroma/
