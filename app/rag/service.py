@@ -42,7 +42,7 @@ def ingest_documents(documents: list[DocumentIn]) -> list[str]:
                 metadata = doc.metadata or {"_missing": True}
                 metadatas.append(metadata)
 
-        embeddings = embed_texts(texts)
+        embeddings = embed_texts(texts, task_type="retrieval_document")
         add_documents(
             ids=batch_ids,
             texts=texts,
@@ -95,8 +95,9 @@ def ingest_directory(
 
 def answer_query(query: str, top_k: int | None = None) -> QueryResponse:
     effective_top_k = top_k or settings.top_k
-    query_embedding = embed_texts([query])[0]
-    results = query_by_embedding(query_embedding, top_k=effective_top_k)
+    query_embedding = embed_texts([query], task_type="retrieval_query")[0]
+    candidate_k = max(effective_top_k * 5, 50)
+    results = query_by_embedding(query_embedding, top_k=candidate_k)
 
     ids = results.get("ids", [[]])[0]
     documents = results.get("documents", [[]])[0]
@@ -106,7 +107,8 @@ def answer_query(query: str, top_k: int | None = None) -> QueryResponse:
     sources: list[Source] = []
     context_chunks: list[str] = []
 
-    for doc_id, text, metadata, distance in zip(ids, documents, metadatas, distances):
+    ranked = _rerank_results(query, ids, documents, metadatas, distances)
+    for doc_id, text, metadata, distance in ranked[:effective_top_k]:
         score = 1.0 - float(distance) if distance is not None else 0.0
         sources.append(
             Source(id=doc_id, score=score, text=text, metadata=metadata)
@@ -157,3 +159,37 @@ def _split_documents(
 def _chunk_text(text: str, chunk_size: int) -> Iterable[str]:
     for start in range(0, len(text), chunk_size):
         yield text[start : start + chunk_size]
+
+
+def _rerank_results(
+    query: str,
+    ids: list[str],
+    documents: list[str],
+    metadatas: list[dict[str, object] | None],
+    distances: list[float | None],
+) -> list[tuple[str, str, dict[str, object] | None, float | None]]:
+    query_lower = query.lower()
+    terms = [term for term in query_lower.split() if term]
+
+    def lexical_score(text: str) -> int:
+        if not text:
+            return 0
+        lowered = text.lower()
+        score = 0
+        if query_lower and query_lower in lowered:
+            score += len(terms) + 1
+        for term in terms:
+            if term in lowered:
+                score += 1
+        return score
+
+    scored: list[tuple[int, float, int, str, str, dict[str, object] | None, float | None]] = []
+    for index, (doc_id, text, metadata, distance) in enumerate(
+        zip(ids, documents, metadatas, distances)
+    ):
+        score = lexical_score(text)
+        dist_value = float(distance) if distance is not None else 1.0
+        scored.append((score, dist_value, index, doc_id, text, metadata, distance))
+
+    scored.sort(key=lambda item: (-item[0], item[1], item[2]))
+    return [(doc_id, text, metadata, distance) for _, _, _, doc_id, text, metadata, distance in scored]
