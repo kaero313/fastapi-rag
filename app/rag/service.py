@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Iterable
 from uuid import uuid4
 
 import google.generativeai as genai
@@ -23,25 +24,32 @@ genai.configure(api_key=settings.gemini_api_key)
 
 def ingest_documents(documents: list[DocumentIn]) -> list[str]:
     ids: list[str] = []
-    texts: list[str] = []
-    metadatas: list[dict[str, object]] = []
     include_metadata = any(doc.metadata for doc in documents)
+    chunk_size = max(1, settings.ingest_chunk_size)
+    expanded_documents = _split_documents(documents, chunk_size)
 
-    for doc in documents:
-        doc_id = doc.id or uuid4().hex
-        ids.append(doc_id)
-        texts.append(doc.text)
-        if include_metadata:
-            metadata = doc.metadata or {"_missing": True}
-            metadatas.append(metadata)
+    batch_size = max(1, settings.ingest_batch_size)
+    for batch in _chunked(expanded_documents, batch_size):
+        texts: list[str] = []
+        metadatas: list[dict[str, object]] = []
+        batch_ids: list[str] = []
 
-    embeddings = embed_texts(texts)
-    add_documents(
-        ids=ids,
-        texts=texts,
-        embeddings=embeddings,
-        metadatas=metadatas if include_metadata else None,
-    )
+        for doc in batch:
+            doc_id = doc.id or uuid4().hex
+            batch_ids.append(doc_id)
+            texts.append(doc.text)
+            if include_metadata:
+                metadata = doc.metadata or {"_missing": True}
+                metadatas.append(metadata)
+
+        embeddings = embed_texts(texts)
+        add_documents(
+            ids=batch_ids,
+            texts=texts,
+            embeddings=embeddings,
+            metadatas=metadatas if include_metadata else None,
+        )
+        ids.extend(batch_ids)
     return ids
 
 
@@ -115,3 +123,37 @@ def answer_query(query: str, top_k: int | None = None) -> QueryResponse:
     response = model.generate_content(prompt)
     answer = response.text or ""
     return QueryResponse(answer=answer, sources=sources)
+
+
+def _chunked(items: list[DocumentIn], size: int) -> Iterable[list[DocumentIn]]:
+    for index in range(0, len(items), size):
+        yield items[index : index + size]
+
+
+def _split_documents(
+    documents: list[DocumentIn],
+    chunk_size: int,
+) -> list[DocumentIn]:
+    if chunk_size <= 0:
+        return documents
+
+    chunked: list[DocumentIn] = []
+    for doc in documents:
+        text = doc.text
+        if len(text) <= chunk_size:
+            chunked.append(doc)
+            continue
+
+        for chunk in _chunk_text(text, chunk_size):
+            chunked.append(
+                DocumentIn(
+                    text=chunk,
+                    metadata=doc.metadata,
+                )
+            )
+    return chunked
+
+
+def _chunk_text(text: str, chunk_size: int) -> Iterable[str]:
+    for start in range(0, len(text), chunk_size):
+        yield text[start : start + chunk_size]

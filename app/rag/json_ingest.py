@@ -7,7 +7,7 @@ from app.schemas import DocumentIn
 
 
 def parse_json_documents(filename: str, json_bytes: bytes) -> list[DocumentIn]:
-    payload = json_bytes.decode("utf-8-sig")
+    payload = _decode_json_bytes(json_bytes)
     data = json.loads(payload)
     return _build_documents(data, filename)
 
@@ -60,6 +60,14 @@ def _normalize_item(item: Any, filename: str, index: int) -> DocumentIn | None:
                 text=str(text),
                 metadata=metadata_dict,
             )
+        if "content" in item:
+            text = item.get("content")
+            if text is None:
+                return None
+            return DocumentIn(
+                text=str(text),
+                metadata=_default_meta(filename, index),
+            )
 
         return DocumentIn(
             text=json.dumps(item, ensure_ascii=False, separators=(",", ":")),
@@ -80,3 +88,10 @@ def _default_meta(filename: str, index: int) -> dict[str, object]:
     if filename:
         meta["source"] = filename
     return meta
+
+
+def _decode_json_bytes(json_bytes: bytes) -> str:
+    try:
+        return json_bytes.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        return json_bytes.decode("cp949")
