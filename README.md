@@ -30,7 +30,7 @@ Gemini 임베딩과 ChromaDB를 이용해 문서를 인입하고, 질의에 대�
 - 핵심 엔드포인트 전체 동작 확인
 - 질의 임베딩을 `retrieval_query`로 분리하여 검색 품질 개선
 - 대용량 JSON 인입 시 성능 이슈 존재(청크/배치 설정으로 완화)
-- google.generativeai 패키지 사용 중(향후 google.genai로 마이그레이션 필요)
+- google.genai SDK 사용
 
 ## 요구사항
 
@@ -194,7 +194,6 @@ curl -X POST "http://127.0.0.1:8000/ingest-json" ^
 
 ## TODO
 
-- [ ] google.genai SDK로 마이그레이션
 - [ ] 대용량 인입 비동기/백그라운드 처리
 - [ ] 토큰 기반 청킹 적용
 - [ ] 메타데이터 필터링 검색 지원

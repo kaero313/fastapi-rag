@@ -7,7 +7,7 @@
 
 - 백엔드: FastAPI (`app/main.py`) + Uvicorn
 - RAG 핵심: `app/rag/service.py`가 ingest/query/generate를 오케스트레이션
-- 임베딩: Gemini 임베딩 API (`google.generativeai`)
+- 임베딩: Gemini 임베딩 API (`google.genai`)
 - 벡터 DB: ChromaDB (영구 저장)
 - 프론트엔드: 정적 HTML/CSS/JS (FastAPI로 서빙)
 

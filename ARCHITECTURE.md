@@ -7,7 +7,7 @@ data flow for the FastAPI RAG system (Gemini + Chroma).
 
 - Backend: FastAPI app in `app/main.py` served by Uvicorn.
 - RAG core: `app/rag/service.py` orchestrates ingestion, retrieval, and generation.
-- Embeddings: Gemini embedding model via `google.generativeai`.
+- Embeddings: Gemini embedding model via `google.genai`.
 - Vector store: ChromaDB persistent collection on disk.
 - Frontend: static HTML/CSS/JS served by FastAPI.
 

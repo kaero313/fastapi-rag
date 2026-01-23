@@ -5,7 +5,7 @@ Purpose:
 
 Project:
 - Name: fastapi-rag
-- Stack: FastAPI + Gemini (google.generativeai) + ChromaDB
+- Stack: FastAPI + Gemini (google.genai) + ChromaDB
 - OS/Shell used last: Windows, PowerShell
 - Repo root: C:\project\fastapi-rag
 
@@ -70,7 +70,7 @@ Known issues and constraints:
 - Chroma file locks on Windows:
   - Stop uvicorn and any Python process before deleting data/chroma.
   - If delete fails, find/stop python.exe holding locks, then retry.
-- google.generativeai emits deprecation warnings (package is deprecated).
+- google.genai SDK is in use.
 
 Why queries sometimes looked empty or irrelevant:
 - Previously, query embeddings used retrieval_document task type.
