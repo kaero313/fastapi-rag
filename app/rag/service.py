@@ -4,7 +4,8 @@ from pathlib import Path
 from typing import Iterable
 from uuid import uuid4
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 from app.core.config import settings
 from app.rag.directory_ingest import load_documents_from_directory
@@ -19,7 +20,7 @@ SYSTEM_PROMPT = (
     "If the answer is not in the context, say you do not know."
 )
 
-genai.configure(api_key=settings.gemini_api_key)
+client = genai.Client(api_key=settings.gemini_api_key)
 
 
 def ingest_documents(documents: list[DocumentIn]) -> list[str]:
@@ -117,12 +118,12 @@ def answer_query(query: str, top_k: int | None = None) -> QueryResponse:
 
     context = "\n\n".join(context_chunks)
 
-    model = genai.GenerativeModel(
-        model_name=settings.gemini_model,
-        system_instruction=SYSTEM_PROMPT,
-    )
     prompt = "Context:\n" + context + "\n\n" + "Question:\n" + query
-    response = model.generate_content(prompt)
+    response = client.models.generate_content(
+        model=settings.gemini_model,
+        contents=prompt,
+        config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT),
+    )
     answer = response.text or ""
     return QueryResponse(answer=answer, sources=sources)
 

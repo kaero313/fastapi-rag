@@ -1,10 +1,11 @@
 import time
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 from app.core.config import settings
 
-genai.configure(api_key=settings.gemini_api_key)
+client = genai.Client(api_key=settings.gemini_api_key)
 
 
 def embed_texts(
@@ -24,12 +25,15 @@ def _embed_with_retry(text: str, task_type: str) -> list[float]:
     backoff = max(0.0, settings.embed_retry_backoff)
     for attempt in range(max_retries):
         try:
-            response = genai.embed_content(
+            response = client.models.embed_content(
                 model=settings.gemini_embedding_model,
-                content=text,
-                task_type=task_type,
+                contents=text,
+                config=types.EmbedContentConfig(task_type=task_type),
             )
-            return response["embedding"]
+            embeddings = response.embeddings or []
+            if not embeddings or embeddings[0].values is None:
+                raise ValueError("Empty embedding response.")
+            return embeddings[0].values
         except Exception:
             if attempt + 1 >= max_retries:
                 raise
