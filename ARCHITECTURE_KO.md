@@ -210,7 +210,7 @@ JSON 업로드 후 레코드 인입.
 ### 질의(query)
 
 1. 질의 임베딩 생성 (`retrieval_query`).
-2. 후보군 조회 (`candidate_k = max(top_k * 5, 50)`).
+2. 후보군 조회 (`candidate_k = max(top_k * CANDIDATE_K_MULTIPLIER, CANDIDATE_K_MIN)`).
 3. 키워드 매칭 기반 재정렬 후 상위 `top_k` 선택.
 4. 컨텍스트를 묶어 Gemini LLM 호출.
 
@@ -269,6 +269,8 @@ JSON 업로드 후 레코드 인입.
 - `EMBED_RETRY_BACKOFF=1.0`
 - `INGEST_BATCH_SIZE=64`
 - `INGEST_CHUNK_SIZE=4000`
+- `CANDIDATE_K_MULTIPLIER=10`
+- `CANDIDATE_K_MIN=100`
 - `CHROMA_PERSIST_DIR=data/chroma`
 - `CHROMA_COLLECTION=rag`
 - `TOP_K=4`

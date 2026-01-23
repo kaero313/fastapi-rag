@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     embed_retry_backoff: float = 1.0
     ingest_batch_size: int = 64
     ingest_chunk_size: int = 4000
+    candidate_k_multiplier: int = 10
+    candidate_k_min: int = 100
     chroma_persist_dir: str = "data/chroma"
     chroma_collection: str = "rag"
     top_k: int = 4

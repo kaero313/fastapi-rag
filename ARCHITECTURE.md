@@ -213,7 +213,7 @@ Implemented in `app/rag/pdf.py`.
 
 1. Embed the query using task type `retrieval_query`.
 2. Retrieve candidate results from ChromaDB
-   (`candidate_k = max(top_k * 5, 50)`).
+   (`candidate_k = max(top_k * CANDIDATE_K_MULTIPLIER, CANDIDATE_K_MIN)`).
 3. Rerank candidates with a lexical match score, then by distance.
 4. Build context from the top `top_k` chunks.
 5. Call Gemini LLM to generate the final answer.
@@ -272,6 +272,8 @@ Optional (defaults shown):
 - `EMBED_RETRY_BACKOFF=1.0`
 - `INGEST_BATCH_SIZE=64`
 - `INGEST_CHUNK_SIZE=4000`
+- `CANDIDATE_K_MULTIPLIER=10`
+- `CANDIDATE_K_MIN=100`
 - `CHROMA_PERSIST_DIR=data/chroma`
 - `CHROMA_COLLECTION=rag`
 - `TOP_K=4`

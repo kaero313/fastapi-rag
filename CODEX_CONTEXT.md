@@ -54,7 +54,7 @@ Behavior changes in code (already in repo state):
 - app/rag/service.py
   - ingestion batches via INGEST_BATCH_SIZE.
   - document chunking via INGEST_CHUNK_SIZE (character count).
-  - query uses candidate_k = max(top_k * 5, 50) and reranks.
+  - query uses candidate_k = max(top_k * CANDIDATE_K_MULTIPLIER, CANDIDATE_K_MIN) and reranks.
   - rerank prefers lexical matches, then vector distance.
 - app/rag/json_ingest.py
   - supports `content` field in JSON records.

@@ -169,6 +169,8 @@ curl -X POST "http://127.0.0.1:8000/ingest-json" ^
 - `EMBED_RETRY_BACKOFF` (default: `1.0`)
 - `INGEST_BATCH_SIZE` (default: `64`)
 - `INGEST_CHUNK_SIZE` (default: `4000`)
+- `CANDIDATE_K_MULTIPLIER` (default: `10`)
+- `CANDIDATE_K_MIN` (default: `100`)
 - `CHROMA_PERSIST_DIR` (default: `data/chroma`)
 - `CHROMA_COLLECTION` (default: `rag`)
 - `TOP_K` (default: `4`)
