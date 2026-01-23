@@ -97,7 +97,7 @@ def ingest_directory(
 def answer_query(query: str, top_k: int | None = None) -> QueryResponse:
     effective_top_k = top_k or settings.top_k
     query_embedding = embed_texts([query], task_type="retrieval_query")[0]
-    candidate_k = max(effective_top_k * 5, 50)
+    candidate_k = max(effective_top_k * 10, 100)
     results = query_by_embedding(query_embedding, top_k=candidate_k)
 
     ids = results.get("ids", [[]])[0]
