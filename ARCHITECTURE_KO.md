@@ -119,6 +119,25 @@ JSON 업로드 후 레코드 인입.
   - 404: 디렉터리 없음
   - 400: 인입 가능한 파일 없음
 
+### POST /ingest-dir-async
+
+디렉터리 인입을 백그라운드 스레드에서 실행하고 job ID를 반환합니다.
+
+- Request body: `IngestDirectoryRequest`
+- Response: `{ "job_id": "<id>", "status": "queued" }`
+- Errors: `/ingest-dir`와 동일
+
+### GET /ingest-dir-jobs/{job_id}
+
+백그라운드 인입 job 상태를 조회합니다.
+
+- Response fields:
+  - `job_id`, `status`, `created_at`, `started_at`, `finished_at`
+  - 실패 시 `error`
+  - 완료 시 `result` (`/ingest-dir`와 동일한 결과)
+- Errors:
+  - 404: job 없음
+
 ### POST /query
 
 벡터 검색 후 답변 생성.
@@ -301,5 +320,6 @@ data/
 
 - 인증/권한 없음.
 - 대량 인입 시 동기식 처리로 시간이 오래 걸릴 수 있음.
+- 비동기 인입 job 상태는 메모리에만 저장되며 서버 재시작 시 초기화됨.
 - Gemini API 의존.
 - 문서 분할은 토큰이 아닌 문자 수 기준.

@@ -24,6 +24,8 @@ API surface (defined in app/main.py):
 - POST /ingest-pdf
 - POST /ingest-json
 - POST /ingest-dir
+- POST /ingest-dir-async
+- GET /ingest-dir-jobs/{job_id}
 - POST /query
 
 Important config (app/core/config.py):
@@ -56,6 +58,8 @@ Behavior changes in code (already in repo state):
   - document chunking via INGEST_CHUNK_SIZE (character count).
   - query uses candidate_k = max(top_k * CANDIDATE_K_MULTIPLIER, CANDIDATE_K_MIN) and reranks.
   - rerank prefers lexical matches, then vector distance.
+- app/rag/ingest_jobs.py
+  - in-memory job store for background ingest-dir runs.
 - app/rag/json_ingest.py
   - supports `content` field in JSON records.
   - decodes utf-8-sig, falls back to cp949.

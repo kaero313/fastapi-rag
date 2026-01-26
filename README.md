@@ -97,6 +97,8 @@ uvicorn app.main:app --reload
 - `POST /ingest-pdf` : PDF 업로드 인입
 - `POST /ingest-json` : JSON 업로드 인입
 - `POST /ingest-dir` : 디렉터리 일괄 인입
+- `POST /ingest-dir-async` : 디렉터리 비동기 인입 (job 생성)
+- `GET /ingest-dir-jobs/{job_id}` : 비동기 인입 상태 조회
 - `POST /query` : 질의 및 답변 생성
 
 ## 예시
@@ -157,6 +159,9 @@ curl -X POST "http://127.0.0.1:8000/ingest-json" ^
 
 `/ingest-dir`는 `INGEST_BASE_DIR` 하위만 허용합니다.
 기본값은 `data/ingest`이며, `"."`는 해당 폴더 전체를 의미합니다.
+
+대용량 인입은 `/ingest-dir-async`를 사용하면 요청 타임아웃을 피할 수 있습니다.
+비동기 job 상태는 메모리에만 저장되며 서버 재시작 시 초기화됩니다.
 
 ## 설정(.env)
 

@@ -119,6 +119,25 @@ Ingest files from a directory under `INGEST_BASE_DIR`.
   - 404 if target directory does not exist
   - 400 if no ingestable files found
 
+### POST /ingest-dir-async
+
+Run directory ingestion in a background thread and return a job ID.
+
+- Request body: `IngestDirectoryRequest`
+- Response: `{ "job_id": "<id>", "status": "queued" }`
+- Errors: same validation as `/ingest-dir`
+
+### GET /ingest-dir-jobs/{job_id}
+
+Fetch the status for a background ingestion job.
+
+- Response fields:
+  - `job_id`, `status`, `created_at`, `started_at`, `finished_at`
+  - `error` when failed
+  - `result` when completed (same payload as `/ingest-dir`)
+- Errors:
+  - 404 if job is missing
+
 ### POST /query
 
 Query the vector store and generate a response.
@@ -304,5 +323,6 @@ data/
 
 - No authentication or authorization is implemented.
 - Ingestion and query are synchronous and can be slow for large inputs.
+- Async ingest jobs are stored in memory and reset on server restart.
 - The system relies on external Gemini APIs for embeddings and generation.
 - Large documents are split by character count, not tokens.
