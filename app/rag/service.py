@@ -25,9 +25,10 @@ client = genai.Client(api_key=settings.gemini_api_key)
 
 def ingest_documents(documents: list[DocumentIn]) -> list[str]:
     ids: list[str] = []
-    include_metadata = any(doc.metadata for doc in documents)
-    chunk_size = max(1, settings.ingest_chunk_size)
-    expanded_documents = _split_documents(documents, chunk_size)
+    chunk_size = max(0, settings.ingest_chunk_size)
+    chunk_overlap = max(0, settings.ingest_chunk_overlap)
+    expanded_documents = _split_documents(documents, chunk_size, chunk_overlap)
+    include_metadata = any(doc.metadata for doc in expanded_documents)
 
     batch_size = max(1, settings.ingest_batch_size)
     for batch in _chunked(expanded_documents, batch_size):
@@ -140,30 +141,91 @@ def _chunked(items: list[DocumentIn], size: int) -> Iterable[list[DocumentIn]]:
 def _split_documents(
     documents: list[DocumentIn],
     chunk_size: int,
+    chunk_overlap: int,
 ) -> list[DocumentIn]:
     if chunk_size <= 0:
         return documents
 
+    overlap = max(0, min(chunk_overlap, max(0, chunk_size - 1)))
     chunked: list[DocumentIn] = []
     for doc in documents:
         text = doc.text
-        if len(text) <= chunk_size:
-            chunked.append(doc)
+        if not text:
             continue
 
-        for chunk in _chunk_text(text, chunk_size):
+        chunks = list(_chunk_text(text, chunk_size, overlap))
+        total = len(chunks)
+        if total == 0:
+            continue
+
+        parent_id = doc.id
+        for index, (chunk, start, end) in enumerate(chunks, start=1):
+            metadata = _merge_chunk_metadata(
+                doc.metadata,
+                parent_id,
+                index,
+                total,
+                start,
+                end,
+            )
+            chunk_id: str | None = None
+            if parent_id:
+                chunk_id = parent_id if total == 1 else f"{parent_id}::chunk-{index}"
             chunked.append(
                 DocumentIn(
+                    id=chunk_id,
                     text=chunk,
-                    metadata=doc.metadata,
+                    metadata=metadata,
                 )
             )
     return chunked
 
 
-def _chunk_text(text: str, chunk_size: int) -> Iterable[str]:
-    for start in range(0, len(text), chunk_size):
-        yield text[start : start + chunk_size]
+def _chunk_text(
+    text: str,
+    chunk_size: int,
+    chunk_overlap: int,
+) -> Iterable[tuple[str, int, int]]:
+    length = len(text)
+    if length <= 0:
+        return
+
+    overlap = max(0, min(chunk_overlap, max(0, chunk_size - 1)))
+    threshold = max(1, int(chunk_size * 0.6))
+    start = 0
+    while start < length:
+        end = min(start + chunk_size, length)
+        if end < length:
+            newline = text.rfind("\n", start, end)
+            space = text.rfind(" ", start, end)
+            soft_end = max(newline, space)
+            if soft_end >= start + threshold:
+                end = soft_end
+        chunk = text[start:end].strip()
+        if chunk:
+            yield chunk, start, end
+        next_start = end - overlap
+        if next_start <= start:
+            next_start = end
+        start = next_start
+
+
+def _merge_chunk_metadata(
+    metadata: dict[str, object] | None,
+    parent_id: str | None,
+    index: int,
+    total: int,
+    start: int,
+    end: int,
+) -> dict[str, object]:
+    merged = dict(metadata) if isinstance(metadata, dict) else {}
+    if parent_id:
+        merged.setdefault("parent_id", parent_id)
+    merged["chunk_index"] = index
+    merged["chunk_total"] = total
+    merged["chunk_start"] = start
+    merged["chunk_end"] = end
+    return merged
 
 
 def _rerank_results(
