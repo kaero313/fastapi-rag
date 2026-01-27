@@ -173,7 +173,7 @@ curl -X POST "http://127.0.0.1:8000/ingest-json" ^
 - `EMBED_MAX_RETRIES` (default: `3`)
 - `EMBED_RETRY_BACKOFF` (default: `1.0`)
 - `INGEST_BATCH_SIZE` (default: `64`)
-- `INGEST_CHUNK_SIZE` (default: `4000`)
+- `INGEST_CHUNK_SIZE` (default: `4000`, 토큰 기준 근사치)
 - `INGEST_CHUNK_OVERLAP` (default: `400`)
 - `CANDIDATE_K_MULTIPLIER` (default: `10`)
 - `CANDIDATE_K_MIN` (default: `100`)
