@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
+import re
 from typing import Iterable
 from uuid import uuid4
 
@@ -25,9 +27,9 @@ client = genai.Client(api_key=settings.gemini_api_key)
 
 def ingest_documents(documents: list[DocumentIn]) -> list[str]:
     ids: list[str] = []
-    chunk_size = max(0, settings.ingest_chunk_size)
+    chunk_tokens = max(0, settings.ingest_chunk_size)
     chunk_overlap = max(0, settings.ingest_chunk_overlap)
-    expanded_documents = _split_documents(documents, chunk_size, chunk_overlap)
+    expanded_documents = _split_documents(documents, chunk_tokens, chunk_overlap)
     include_metadata = any(doc.metadata for doc in expanded_documents)
 
     batch_size = max(1, settings.ingest_batch_size)
@@ -140,33 +142,38 @@ def _chunked(items: list[DocumentIn], size: int) -> Iterable[list[DocumentIn]]:
 
 def _split_documents(
     documents: list[DocumentIn],
-    chunk_size: int,
+    chunk_tokens: int,
     chunk_overlap: int,
 ) -> list[DocumentIn]:
-    if chunk_size <= 0:
+    if chunk_tokens <= 0:
         return documents
 
-    overlap = max(0, min(chunk_overlap, max(0, chunk_size - 1)))
+    overlap = max(0, min(chunk_overlap, max(0, chunk_tokens - 1)))
     chunked: list[DocumentIn] = []
     for doc in documents:
-        text = doc.text
-        if not text:
+        text = doc.text or ""
+        if not text.strip():
             continue
 
-        chunks = list(_chunk_text(text, chunk_size, overlap))
-        total = len(chunks)
+        spans = _chunk_text(text, chunk_tokens, overlap)
+        total = len(spans)
         if total == 0:
             continue
 
         parent_id = doc.id
-        for index, (chunk, start, end) in enumerate(chunks, start=1):
+        for index, span in enumerate(spans, start=1):
+            raw_text = text[span.start : span.end]
+            trimmed, trim_start, trim_end = _trim_span(raw_text, span.start, span.end)
+            if not trimmed:
+                continue
             metadata = _merge_chunk_metadata(
                 doc.metadata,
                 parent_id,
                 index,
                 total,
-                start,
-                end,
+                trim_start,
+                trim_end,
+                span.tokens,
             )
             chunk_id: str | None = None
             if parent_id:
@@ -174,7 +181,7 @@ def _split_documents(
             chunked.append(
                 DocumentIn(
                     id=chunk_id,
-                    text=chunk,
+                    text=trimmed,
                     metadata=metadata,
                 )
             )
@@ -183,31 +190,159 @@ def _split_documents(
 
 def _chunk_text(
     text: str,
-    chunk_size: int,
+    chunk_tokens: int,
     chunk_overlap: int,
-) -> Iterable[tuple[str, int, int]]:
-    length = len(text)
-    if length <= 0:
-        return
+) -> list["_ChunkSpan"]:
+    segments = _segments_from_text(text, chunk_tokens, chunk_overlap)
+    if not segments:
+        return []
 
-    overlap = max(0, min(chunk_overlap, max(0, chunk_size - 1)))
-    threshold = max(1, int(chunk_size * 0.6))
-    start = 0
-    while start < length:
-        end = min(start + chunk_size, length)
-        if end < length:
-            newline = text.rfind("\n", start, end)
-            space = text.rfind(" ", start, end)
-            soft_end = max(newline, space)
-            if soft_end >= start + threshold:
-                end = soft_end
-        chunk = text[start:end].strip()
-        if chunk:
-            yield chunk, start, end
-        next_start = end - overlap
-        if next_start <= start:
-            next_start = end
-        start = next_start
+    overlap = max(0, min(chunk_overlap, max(0, chunk_tokens - 1)))
+    spans: list[_ChunkSpan] = []
+    index = 0
+    while index < len(segments):
+        token_total = 0
+        end_index = index
+        while end_index < len(segments):
+            segment_tokens = segments[end_index].tokens
+            if token_total + segment_tokens > chunk_tokens and end_index > index:
+                break
+            token_total += segment_tokens
+            end_index += 1
+
+        last_index = end_index - 1
+        span_start = segments[index].start
+        span_end = segments[last_index].end
+        spans.append(_ChunkSpan(span_start, span_end, token_total))
+
+        if end_index >= len(segments):
+            break
+
+        if overlap <= 0:
+            index = end_index
+            continue
+
+        back_tokens = 0
+        overlap_index = last_index
+        while overlap_index >= index:
+            segment_tokens = segments[overlap_index].tokens
+            if back_tokens + segment_tokens > overlap:
+                break
+            back_tokens += segment_tokens
+            overlap_index -= 1
+
+        next_index = max(overlap_index + 1, index + 1)
+        if next_index <= index:
+            next_index = index + 1
+        index = next_index
+
+    return spans
+
+
+@dataclass(frozen=True)
+class _Segment:
+    start: int
+    end: int
+    tokens: int
+
+
+@dataclass(frozen=True)
+class _ChunkSpan:
+    start: int
+    end: int
+    tokens: int
+
+
+def _segments_from_text(
+    text: str,
+    chunk_tokens: int,
+    chunk_overlap: int,
+) -> list[_Segment]:
+    sentence_spans = _sentence_spans(text)
+    if not sentence_spans:
+        sentence_spans = [(0, len(text))]
+
+    segments: list[_Segment] = []
+    for start, end in sentence_spans:
+        segment_text = text[start:end]
+        token_count = _count_tokens(segment_text)
+        if token_count <= 0:
+            continue
+        if token_count > chunk_tokens:
+            segments.extend(
+                _split_span_by_tokens(
+                    text,
+                    start,
+                    end,
+                    chunk_tokens,
+                    chunk_overlap,
+                )
+            )
+        else:
+            segments.append(_Segment(start, end, token_count))
+    return segments
+
+
+def _split_span_by_tokens(
+    text: str,
+    span_start: int,
+    span_end: int,
+    chunk_tokens: int,
+    chunk_overlap: int,
+) -> list[_Segment]:
+    tokens = _token_spans(text[span_start:span_end])
+    if not tokens:
+        return []
+
+    overlap = max(0, min(chunk_overlap, max(0, chunk_tokens - 1)))
+    segments: list[_Segment] = []
+    index = 0
+    while index < len(tokens):
+        end_index = min(index + chunk_tokens, len(tokens))
+        start_token = tokens[index][0] + span_start
+        end_token = tokens[end_index - 1][1] + span_start
+        segments.append(_Segment(start_token, end_token, end_index - index))
+
+        next_index = end_index - overlap if overlap > 0 else end_index
+        if next_index <= index:
+            next_index = index + 1
+        index = next_index
+
+    return segments
+
+
+def _token_spans(text: str) -> list[tuple[int, int]]:
+    return [match.span() for match in re.finditer(r"\w+|[^\w\s]", text, re.UNICODE)]
+
+
+def _count_tokens(text: str) -> int:
+    return sum(1 for _ in re.finditer(r"\w+|[^\w\s]", text, re.UNICODE))
+
+
+def _sentence_spans(text: str) -> list[tuple[int, int]]:
+    spans: list[tuple[int, int]] = []
+    pattern = re.compile(r".*?(?:[.!?]+|\n+|$)", re.DOTALL)
+    for match in pattern.finditer(text):
+        start, end = match.span()
+        segment = text[start:end]
+        if not segment.strip():
+            continue
+        leading = len(segment) - len(segment.lstrip())
+        trailing = len(segment) - len(segment.rstrip())
+        span_start = start + leading
+        span_end = end - trailing
+        if span_start < span_end:
+            spans.append((span_start, span_end))
+    return spans
+
+
+def _trim_span(text: str, start: int, end: int) -> tuple[str, int, int]:
+    if not text:
+        return "", start, end
+    leading = len(text) - len(text.lstrip())
+    trailing = len(text) - len(text.rstrip())
+    trimmed = text.strip()
+    return trimmed, start + leading, end - trailing
 
 
 def _merge_chunk_metadata(
@@ -217,6 +352,7 @@ def _merge_chunk_metadata(
     total: int,
     start: int,
     end: int,
+    tokens: int,
 ) -> dict[str, object]:
     merged = dict(metadata) if isinstance(metadata, dict) else {}
     if parent_id:
@@ -225,6 +361,7 @@ def _merge_chunk_metadata(
     merged["chunk_total"] = total
     merged["chunk_start"] = start
     merged["chunk_end"] = end
+    merged["chunk_tokens"] = tokens
     return merged
 
 
