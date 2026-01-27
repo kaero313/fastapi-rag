@@ -100,6 +100,7 @@ uvicorn app.main:app --reload
 - `POST /ingest-dir-async` : 디렉터리 비동기 인입 (job 생성)
 - `GET /ingest-dir-jobs/{job_id}` : 비동기 인입 상태 조회
 - `POST /query` : 질의 및 답변 생성
+- `POST /count-tokens` : 텍스트 토큰 수 확인
 
 ## 예시
 
@@ -126,6 +127,15 @@ uvicorn app.main:app --reload
 ```json
 {
   "query": "What is RAG?"
+}
+```
+
+### 토큰 카운트
+
+```json
+{
+  "text": "Hello world!",
+  "model": "gemini-1.5-flash"
 }
 ```
 

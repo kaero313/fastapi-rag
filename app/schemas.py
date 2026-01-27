@@ -24,6 +24,11 @@ class IngestDirectoryRequest(BaseModel):
     extensions: list[str] | None = None
 
 
+class CountTokensRequest(BaseModel):
+    text: str
+    model: str | None = None
+
+
 class Source(BaseModel):
     id: str
     score: float
@@ -34,3 +39,8 @@ class Source(BaseModel):
 class QueryResponse(BaseModel):
     answer: str
     sources: list[Source]
+
+
+class CountTokensResponse(BaseModel):
+    model: str
+    tokens: int

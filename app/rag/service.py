@@ -135,6 +135,18 @@ def answer_query(query: str, top_k: int | None = None) -> QueryResponse:
     return QueryResponse(answer=answer, sources=sources)
 
 
+def count_tokens(text: str, model: str | None = None) -> int:
+    model_name = model or settings.gemini_model
+    response = client.models.count_tokens(
+        model=model_name,
+        contents=text,
+    )
+    total = getattr(response, "total_tokens", None)
+    if total is None and isinstance(response, dict):
+        total = response.get("total_tokens")
+    return int(total or 0)
+
+
 def _chunked(items: list[DocumentIn], size: int) -> Iterable[list[DocumentIn]]:
     for index in range(0, len(items), size):
         yield items[index : index + size]

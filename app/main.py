@@ -17,12 +17,15 @@ from app.rag.ingest_jobs import (
 )
 from app.rag.service import (
     answer_query,
+    count_tokens as count_tokens_service,
     ingest_directory,
     ingest_documents,
     ingest_json_bytes,
     ingest_pdf_bytes,
 )
 from app.schemas import (
+    CountTokensRequest,
+    CountTokensResponse,
     IngestDirectoryRequest,
     IngestRequest,
     QueryRequest,
@@ -128,6 +131,13 @@ def ingest_dir_job(job_id: str):
 @app.post("/query", response_model=QueryResponse)
 def query(request: QueryRequest):
     return answer_query(request.query, top_k=request.top_k)
+
+
+@app.post("/count-tokens", response_model=CountTokensResponse)
+def count_tokens(request: CountTokensRequest):
+    model_name = request.model or settings.gemini_model
+    tokens = count_tokens_service(request.text, model=request.model)
+    return CountTokensResponse(model=model_name, tokens=tokens)
 
 
 def _resolve_ingest_target(
