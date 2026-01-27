@@ -136,7 +136,15 @@ def query(request: QueryRequest):
 @app.post("/count-tokens", response_model=CountTokensResponse)
 def count_tokens(request: CountTokensRequest):
     model_name = request.model or settings.gemini_model
-    tokens = count_tokens_service(request.text, model=request.model)
+    if not request.text.strip():
+        return CountTokensResponse(model=model_name, tokens=0)
+    try:
+        tokens = count_tokens_service(request.text, model=request.model)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Token count failed: {exc}",
+        ) from exc
     return CountTokensResponse(model=model_name, tokens=tokens)
 
 
