@@ -43,6 +43,19 @@
               <span>top_k</span>
               <input id="topK" type="number" min="1" max="12" value="4" />
             </label>
+            <label class="control control-wide">
+              <span>source</span>
+              <select id="sourceSelect" multiple>
+                <option value="">All sources</option>
+              </select>
+            </label>
+            <label class="control">
+              <span>page</span>
+              <div class="range">
+                <input id="pageGte" type="number" min="1" placeholder="from" />
+                <input id="pageLte" type="number" min="1" placeholder="to" />
+              </div>
+            </label>
             <button type="button" class="ghost" id="clear">Clear</button>
           </div>
           <div class="input-row">

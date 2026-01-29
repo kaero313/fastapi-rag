@@ -290,8 +290,41 @@ body {
   color: var(--muted);
 }
 
+.control-wide {
+  flex: 1;
+}
+
 .control input {
   width: 70px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  font-family: "IBM Plex Mono", monospace;
+}
+
+.control select {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.control select[multiple] {
+  min-height: 42px;
+  max-height: 120px;
+}
+
+.range {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.range input {
+  width: 68px;
   padding: 6px 8px;
   border-radius: 10px;
   border: 1px solid var(--border);

@@ -4,6 +4,9 @@ const promptInput = document.getElementById("prompt");
 const sendButton = document.getElementById("send");
 const clearButton = document.getElementById("clear");
 const topKInput = document.getElementById("topK");
+const sourceSelect = document.getElementById("sourceSelect");
+const pageGteInput = document.getElementById("pageGte");
+const pageLteInput = document.getElementById("pageLte");
 const statusEl = document.getElementById("status");
 
 const sanitize = (text) => String(text || "").trim();
@@ -124,6 +127,20 @@ const fetchAnswer = async (query) => {
   if (Number.isFinite(topK) && topK > 0) {
     payload.top_k = topK;
   }
+  const selected = Array.from(sourceSelect.selectedOptions)
+    .map((option) => option.value)
+    .filter((value) => value);
+  if (selected.length) {
+    payload.sources = selected;
+  }
+  const pageGte = Number.parseInt(pageGteInput.value, 10);
+  if (Number.isFinite(pageGte) && pageGte > 0) {
+    payload.page_gte = pageGte;
+  }
+  const pageLte = Number.parseInt(pageLteInput.value, 10);
+  if (Number.isFinite(pageLte) && pageLte > 0) {
+    payload.page_lte = pageLte;
+  }
 
   const response = await fetch("/query", {
     method: "POST",
@@ -166,13 +183,52 @@ const handleSubmit = async (event) => {
 const init = async () => {
   setStatus("", "checking");
   try {
-    const response = await fetch("/health");
-    if (!response.ok) {
+    const [healthResponse, sourcesResponse] = await Promise.all([
+      fetch("/health"),
+      fetch("/sources"),
+    ]);
+    if (!healthResponse.ok) {
       throw new Error("health check failed");
+    }
+    if (sourcesResponse.ok) {
+      const data = await sourcesResponse.json();
+      hydrateSources(data.sources || []);
     }
     setStatus("online", "online");
   } catch (error) {
     setStatus("offline", "offline");
+  }
+};
+
+const hydrateSources = (sources) => {
+  if (!Array.isArray(sources)) {
+    return;
+  }
+  const current = Array.from(sourceSelect.selectedOptions).map(
+    (option) => option.value
+  );
+  sourceSelect.innerHTML = "";
+
+  const allOption = document.createElement("option");
+  allOption.value = "";
+  allOption.textContent = "All sources";
+  sourceSelect.appendChild(allOption);
+
+  sources.forEach((source) => {
+    const option = document.createElement("option");
+    option.value = source;
+    option.textContent = source;
+    sourceSelect.appendChild(option);
+  });
+
+  if (current.length === 0) {
+    allOption.selected = true;
+  } else {
+    Array.from(sourceSelect.options).forEach((option) => {
+      if (current.includes(option.value)) {
+        option.selected = true;
+      }
+    });
   }
 };
 
@@ -191,6 +247,11 @@ clearButton.addEventListener("click", () => {
     "assistant",
     'Drop a question to start. Example: "What is RAG?"'
   );
+  pageGteInput.value = "";
+  pageLteInput.value = "";
+  Array.from(sourceSelect.options).forEach((option) => {
+    option.selected = false;
+  });
 });
 
 init();
