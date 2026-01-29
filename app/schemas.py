@@ -16,6 +16,10 @@ class IngestRequest(BaseModel):
 class QueryRequest(BaseModel):
     query: str
     top_k: int | None = None
+    source: str | None = None
+    sources: list[str] | None = None
+    page_gte: int | None = None
+    page_lte: int | None = None
 
 
 class IngestDirectoryRequest(BaseModel):
@@ -44,3 +48,7 @@ class QueryResponse(BaseModel):
 class CountTokensResponse(BaseModel):
     model: str
     tokens: int
+
+
+class SourcesResponse(BaseModel):
+    sources: list[str]

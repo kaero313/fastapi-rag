@@ -18,6 +18,7 @@ from app.rag.ingest_jobs import (
 from app.rag.service import (
     answer_query,
     count_tokens as count_tokens_service,
+    get_sources,
     ingest_directory,
     ingest_documents,
     ingest_json_bytes,
@@ -30,6 +31,7 @@ from app.schemas import (
     IngestRequest,
     QueryRequest,
     QueryResponse,
+    SourcesResponse,
 )
 
 app = FastAPI(title="fastapi-rag")
@@ -130,7 +132,19 @@ def ingest_dir_job(job_id: str):
 
 @app.post("/query", response_model=QueryResponse)
 def query(request: QueryRequest):
-    return answer_query(request.query, top_k=request.top_k)
+    return answer_query(
+        request.query,
+        top_k=request.top_k,
+        source=request.source,
+        sources=request.sources,
+        page_gte=request.page_gte,
+        page_lte=request.page_lte,
+    )
+
+
+@app.get("/sources", response_model=SourcesResponse)
+def sources(limit: int | None = None):
+    return SourcesResponse(sources=get_sources(limit=limit))
 
 
 @app.post("/count-tokens", response_model=CountTokensResponse)
