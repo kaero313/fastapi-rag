@@ -99,6 +99,7 @@ uvicorn app.main:app --reload
 - `POST /ingest-dir` : 디렉터리 일괄 인입
 - `POST /ingest-dir-async` : 디렉터리 비동기 인입 (job 생성)
 - `GET /ingest-dir-jobs/{job_id}` : 비동기 인입 상태 조회
+- `GET /sources` : 인입된 source 목록 조회
 - `POST /query` : 질의 및 답변 생성
 - `POST /count-tokens` : 텍스트 토큰 수 확인
 
@@ -130,12 +131,32 @@ uvicorn app.main:app --reload
 }
 ```
 
+특정 문서로 범위를 좁히려면 `source`를 함께 전달합니다.
+
+```json
+{
+  "query": "조사위원회 활동기간은?",
+  "source": "10ㆍ29이태원참사 특별법.pdf"
+}
+```
+
+여러 문서 + 페이지 범위를 함께 지정할 수도 있습니다.
+
+```json
+{
+  "query": "조사위원회 활동기간은?",
+  "sources": ["10ㆍ29이태원참사 특별법.pdf", "다른문서.pdf"],
+  "page_gte": 5,
+  "page_lte": 15
+}
+```
+
 ### 토큰 카운트
 
 ```json
 {
   "text": "Hello world!",
-  "model": "gemini-1.5-flash"
+  "model": "gemini-2.5-flash"
 }
 ```
 
@@ -178,7 +199,7 @@ curl -X POST "http://127.0.0.1:8000/ingest-json" ^
 주요 변수:
 
 - `GEMINI_API_KEY` (필수)
-- `GEMINI_MODEL` (default: `gemini-1.5-flash`)
+- `GEMINI_MODEL` (default: `gemini-2.5-flash`)
 - `GEMINI_EMBEDDING_MODEL` (default: `text-embedding-004`)
 - `EMBED_MAX_RETRIES` (default: `3`)
 - `EMBED_RETRY_BACKOFF` (default: `1.0`)

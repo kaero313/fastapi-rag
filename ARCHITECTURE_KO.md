@@ -282,7 +282,7 @@ JSON 업로드 후 레코드 인입.
 
 기본값(선택):
 
-- `GEMINI_MODEL=gemini-1.5-flash`
+- `GEMINI_MODEL=gemini-2.5-flash`
 - `GEMINI_EMBEDDING_MODEL=text-embedding-004`
 - `EMBED_MAX_RETRIES=3`
 - `EMBED_RETRY_BACKOFF=1.0`

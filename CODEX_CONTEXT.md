@@ -30,7 +30,7 @@ API surface (defined in app/main.py):
 
 Important config (app/core/config.py):
 - GEMINI_API_KEY (required, in .env, do not commit)
-- GEMINI_MODEL (default gemini-1.5-flash)
+- GEMINI_MODEL (default gemini-2.5-flash)
 - GEMINI_EMBEDDING_MODEL (default text-embedding-004)
 - EMBED_MAX_RETRIES (default 3)
 - EMBED_RETRY_BACKOFF (default 1.0)

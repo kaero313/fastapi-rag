@@ -14,7 +14,7 @@ from app.rag.directory_ingest import load_documents_from_directory
 from app.rag.embeddings import embed_texts
 from app.rag.json_ingest import parse_json_documents
 from app.rag.pdf import extract_text_by_page
-from app.rag.vectorstore import add_documents, query_by_embedding
+from app.rag.vectorstore import add_documents, list_sources, query_by_embedding
 from app.schemas import DocumentIn, QueryResponse, Source
 
 SYSTEM_PROMPT = (
@@ -97,7 +97,14 @@ def ingest_directory(
     return ids, stats
 
 
-def answer_query(query: str, top_k: int | None = None) -> QueryResponse:
+def answer_query(
+    query: str,
+    top_k: int | None = None,
+    source: str | None = None,
+    sources: list[str] | None = None,
+    page_gte: int | None = None,
+    page_lte: int | None = None,
+) -> QueryResponse:
     effective_top_k = top_k or settings.top_k
     query_embedding = embed_texts([query], task_type="retrieval_query")[0]
     multiplier = max(1, settings.candidate_k_multiplier)
@@ -105,7 +112,8 @@ def answer_query(query: str, top_k: int | None = None) -> QueryResponse:
         effective_top_k * multiplier,
         settings.candidate_k_min,
     )
-    results = query_by_embedding(query_embedding, top_k=candidate_k)
+    where = _build_where(source, sources, page_gte, page_lte)
+    results = query_by_embedding(query_embedding, top_k=candidate_k, where=where)
 
     ids = results.get("ids", [[]])[0]
     documents = results.get("documents", [[]])[0]
@@ -145,6 +153,41 @@ def count_tokens(text: str, model: str | None = None) -> int:
     if total is None and isinstance(response, dict):
         total = response.get("total_tokens")
     return int(total or 0)
+
+
+def get_sources(limit: int | None = None) -> list[str]:
+    return list_sources(limit=limit)
+
+
+def _build_where(
+    source: str | None,
+    sources: list[str] | None,
+    page_gte: int | None,
+    page_lte: int | None,
+) -> dict[str, object] | None:
+    clauses: list[dict[str, object]] = []
+    normalized_sources = [item for item in (sources or []) if item] if sources else []
+    if not normalized_sources and source:
+        normalized_sources = [source]
+    if normalized_sources:
+        clauses.append(
+            {
+                "source": normalized_sources[0]
+                if len(normalized_sources) == 1
+                else {"$in": normalized_sources}
+            }
+        )
+
+    if page_gte is not None:
+        clauses.append({"page": {"$gte": page_gte}})
+    if page_lte is not None:
+        clauses.append({"page": {"$lte": page_lte}})
+
+    if not clauses:
+        return None
+    if len(clauses) == 1:
+        return clauses[0]
+    return {"$and": clauses}
 
 
 def _chunked(items: list[DocumentIn], size: int) -> Iterable[list[DocumentIn]]:
