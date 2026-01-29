@@ -37,10 +37,40 @@ def add_documents(
         )
 
 
-def query_by_embedding(embedding: list[float], top_k: int):
+def query_by_embedding(
+    embedding: list[float],
+    top_k: int,
+    where: dict[str, object] | None = None,
+):
     collection = get_collection()
-    return collection.query(
-        query_embeddings=[embedding],
-        n_results=top_k,
-        include=["documents", "metadatas", "distances"],
+    params: dict[str, object] = {
+        "query_embeddings": [embedding],
+        "n_results": top_k,
+        "include": ["documents", "metadatas", "distances"],
+    }
+    if where:
+        params["where"] = where
+    return collection.query(**params)
+
+
+def list_sources(limit: int | None = None) -> list[str]:
+    collection = get_collection()
+    total = collection.count()
+    if total <= 0:
+        return []
+
+    fetch_limit = total if limit is None else max(0, min(limit, total))
+    if fetch_limit <= 0:
+        return []
+
+    data = collection.get(
+        limit=fetch_limit,
+        include=["metadatas"],
     )
+    metadatas = data.get("metadatas") or []
+    sources = {
+        meta.get("source")
+        for meta in metadatas
+        if isinstance(meta, dict) and meta.get("source")
+    }
+    return sorted(sources)
