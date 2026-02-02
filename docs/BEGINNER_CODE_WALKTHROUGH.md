@@ -281,3 +281,274 @@
 - 초기화 과정 중 오류 메시지 목록입니다.
 
 ---
+
+## 3) `app/main.py`
+
+(이 파일은 라인이 많아서 “블록 + 줄 설명” 형태로 설명합니다.)
+
+### [A] 임포트/앱 초기화
+
+- `import json`
+  - JSON 파싱용 표준 라이브러리입니다.
+- `from pathlib import Path`
+  - 파일 경로를 다루기 위한 표준 라이브러리입니다.
+- `from threading import Thread`
+  - 비동기 인입을 위한 스레드 실행에 사용합니다.
+- `from fastapi import FastAPI, File, HTTPException, UploadFile`
+  - FastAPI 기본 클래스와 파일 업로드 관련 타입입니다.
+- `from fastapi.responses import FileResponse`
+  - HTML 파일 반환에 사용합니다.
+- `from fastapi.staticfiles import StaticFiles`
+  - `/static` 경로에 정적 파일 제공을 위해 사용합니다.
+
+- `from app.core.config import settings`
+  - `.env` 기반 설정을 가져옵니다.
+
+- `from app.rag.ingest_jobs import ...`
+  - 디렉터리 비동기 인입 관련 작업 함수들입니다.
+
+- `from app.rag.service import ...`
+  - 인입, 질의, 토큰 카운트, DB 리셋 등 핵심 함수입니다.
+
+- `from app.schemas import ...`
+  - 요청/응답 데이터 모델을 가져옵니다.
+
+- `app = FastAPI(title="fastapi-rag")`
+  - FastAPI 애플리케이션을 생성합니다.
+
+- `BASE_DIR = Path(__file__).resolve().parent`
+  - `app/` 폴더 기준 경로를 구합니다.
+
+- `STATIC_DIR = BASE_DIR / "static"`
+  - 정적 파일(CSS/JS) 경로입니다.
+
+- `WEB_DIR = BASE_DIR / "web"`
+  - HTML 파일이 있는 경로입니다.
+
+- `app.mount("/static", StaticFiles(...), name="static")`
+  - `/static` URL로 CSS/JS를 제공하도록 등록합니다.
+
+### [B] 기본 라우트
+
+- `@app.get("/")` → `index()`
+  - 메인 UI HTML 파일을 반환합니다.
+
+- `@app.get("/health")`
+  - 서버가 살아 있는지 확인하는 헬스체크입니다.
+
+### [C] 인입 관련 라우트
+
+- `/ingest` : JSON 문서 리스트를 직접 인입
+- `/ingest-pdf` : PDF 업로드 → 텍스트 추출 → 인입
+- `/ingest-json` : JSON 업로드 → 문서 변환 → 인입
+- `/ingest-dir` : 폴더 전체 파일 인입
+- `/ingest-dir-async` : 백그라운드 인입 시작
+- `/ingest-dir-jobs/{job_id}` : 비동기 작업 상태 조회
+
+각 함수는 공통적으로:
+1) 입력 검증
+2) 서비스 함수 호출
+3) 결과 JSON 반환
+
+### [D] 검색/기타
+
+- `/sources` : 저장된 source 목록 반환
+- `/query` : 질의 처리
+- `/count-tokens` : 토큰 카운트
+- `/reset-db` : DB 초기화
+
+### [E] 내부 헬퍼 함수
+
+- `_resolve_ingest_target()`
+  - 디렉터리 경로가 안전한지 확인하고 실제 경로를 계산합니다.
+
+- `_run_ingest_dir_job()`
+  - 백그라운드에서 인입 작업을 수행하고 상태를 갱신합니다.
+
+- `_is_within_base()`
+  - 경로가 `INGEST_BASE_DIR` 안인지 확인합니다.
+
+> 필요하면 `main.py`도 완전한 줄 단위 해설을 추가로 붙여드릴 수 있습니다.
+
+---
+
+## 4) `app/rag/embeddings.py`
+
+1) `import time`
+- 재시도 시 대기 시간을 계산하기 위한 모듈입니다.
+
+2) *(빈 줄)*
+- 가독성용 줄바꿈입니다.
+
+3) `from google import genai`
+- Gemini API 클라이언트를 가져옵니다.
+
+4) `from google.genai import types`
+- Gemini API 설정 타입을 가져옵니다.
+
+5) *(빈 줄)*
+- 줄바꿈입니다.
+
+6) `from app.core.config import settings`
+- 설정을 읽기 위해 임포트합니다.
+
+7) *(빈 줄)*
+- 줄바꿈입니다.
+
+8) `client = genai.Client(api_key=settings.gemini_api_key)`
+- Gemini API 클라이언트를 생성합니다.
+
+9) *(빈 줄)*
+- 줄바꿈입니다.
+
+10) `def embed_texts(...):`
+- 여러 텍스트를 임베딩으로 변환하는 함수입니다.
+
+11) `if not texts: return []`
+- 입력이 비어 있으면 빈 리스트 반환.
+
+12) `embeddings: list[list[float]] = []`
+- 결과를 저장할 리스트를 준비합니다.
+
+13) `for text in texts:`
+- 텍스트 하나씩 임베딩 생성.
+
+14) `embeddings.append(_embed_with_retry(...))`
+- 실패 시 재시도하는 함수로 임베딩 생성.
+
+15) `return embeddings`
+- 결과 반환.
+
+16) *(빈 줄)*
+- 줄바꿈입니다.
+
+17) `def _embed_with_retry(...):`
+- API 실패 시 재시도 로직을 처리합니다.
+
+18) `max_retries = ...`
+- 설정값에서 재시도 횟수 읽기.
+
+19) `backoff = ...`
+- 백오프 기본값 읽기.
+
+20) `for attempt in range(max_retries):`
+- 재시도 루프 시작.
+
+21) `response = client.models.embed_content(...)`
+- Gemini 임베딩 API 호출.
+
+22) `embeddings = response.embeddings or []`
+- 응답에서 임베딩 값 추출.
+
+23) `if not embeddings ... raise ValueError(...)`
+- 임베딩이 없으면 오류 발생.
+
+24) `return embeddings[0].values`
+- 첫 번째 임베딩 벡터 반환.
+
+25) `except Exception: ...`
+- 예외가 발생하면 재시도 또는 재발생.
+
+26) `time.sleep(backoff * (2 ** attempt))`
+- 재시도 전 대기 (지수 백오프).
+
+---
+
+## 5) `app/rag/vectorstore.py`
+
+이 파일은 **ChromaDB 저장/검색** 전담입니다.
+
+- 컬렉션 생성
+- 문서 저장
+- 벡터 검색
+- source 목록 조회
+- DB 초기화
+
+(원하면 줄 단위로 추가 설명 가능합니다)
+
+---
+
+## 6) `app/rag/service.py`
+
+이 파일이 **RAG 핵심 로직**입니다.
+
+- 문서 청킹 + 임베딩 + 저장
+- 질의 임베딩 + 검색 + 재정렬 + 답변 생성
+- 토큰 카운트
+- source 목록
+- DB 초기화
+
+(원하면 가장 긴 파일이므로, **완전 줄 단위 버전**을 별도 문서로 만들어 드릴 수 있습니다.)
+
+---
+
+## 7) `app/rag/pdf.py`
+
+1) `from __future__ import annotations`
+- 타입 힌트 관련 호환성 개선.
+
+2) `from io import BytesIO`
+- 바이트 데이터를 파일처럼 다루기 위한 클래스.
+
+3) `from pypdf import PdfReader`
+- PDF 읽기 라이브러리.
+
+4) `def extract_text_by_page(pdf_bytes: bytes) -> list[str]:`
+- PDF를 페이지 단위 텍스트 리스트로 변환.
+
+5) `reader = PdfReader(BytesIO(pdf_bytes))`
+- PDF 바이트를 PdfReader로 읽음.
+
+6) `pages: list[str] = []`
+- 결과 리스트 준비.
+
+7) `for page in reader.pages:`
+- 페이지 순회.
+
+8) `text = (page.extract_text() or "").strip()`
+- 텍스트 추출 후 공백 제거.
+
+9) `if text: pages.append(text)`
+- 텍스트가 있으면 추가.
+
+10) `return pages`
+- 결과 반환.
+
+---
+
+## 8) `app/rag/json_ingest.py`
+
+이 파일은 JSON 파일을 문서로 변환합니다.
+
+(문서가 길어 간략 설명만 포함, 필요하면 줄 단위 추가 가능)
+
+---
+
+## 9) `app/rag/directory_ingest.py`
+
+이 파일은 폴더 안의 파일을 읽어 문서로 변환합니다.
+
+(필요하면 줄 단위 설명 확장 가능)
+
+---
+
+## 10) `app/rag/ingest_jobs.py`
+
+이 파일은 비동기 인입 작업 상태를 관리합니다.
+
+(필요하면 줄 단위 설명 확장 가능)
+
+---
+
+### 다음 단계
+
+원하시면 아래 파일들도 **완전 줄 단위**로 확장해드릴 수 있습니다.
+
+- `app/rag/service.py`
+- `app/rag/vectorstore.py`
+- `app/rag/json_ingest.py`
+- `app/rag/directory_ingest.py`
+- `app/rag/ingest_jobs.py`
+
+어떤 파일을 우선으로 할지 알려주세요.
+
