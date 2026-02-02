@@ -23,6 +23,7 @@ from app.rag.service import (
     ingest_documents,
     ingest_json_bytes,
     ingest_pdf_bytes,
+    reset_db,
 )
 from app.schemas import (
     CountTokensRequest,
@@ -31,6 +32,8 @@ from app.schemas import (
     IngestRequest,
     QueryRequest,
     QueryResponse,
+    ResetDbRequest,
+    ResetDbResponse,
     SourcesResponse,
 )
 
@@ -160,6 +163,17 @@ def count_tokens(request: CountTokensRequest):
             detail=f"Token count failed: {exc}",
         ) from exc
     return CountTokensResponse(model=model_name, tokens=tokens)
+
+
+@app.post("/reset-db", response_model=ResetDbResponse)
+def reset_database(request: ResetDbRequest):
+    if not request.confirm:
+        raise HTTPException(
+            status_code=400,
+            detail="Reset not confirmed. Set confirm=true to proceed.",
+        )
+    result = reset_db()
+    return ResetDbResponse(**result)
 
 
 def _resolve_ingest_target(

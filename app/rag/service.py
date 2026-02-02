@@ -14,7 +14,12 @@ from app.rag.directory_ingest import load_documents_from_directory
 from app.rag.embeddings import embed_texts
 from app.rag.json_ingest import parse_json_documents
 from app.rag.pdf import extract_text_by_page
-from app.rag.vectorstore import add_documents, list_sources, query_by_embedding
+from app.rag.vectorstore import (
+    add_documents,
+    list_sources,
+    query_by_embedding,
+    reset_store,
+)
 from app.schemas import DocumentIn, QueryResponse, Source
 
 SYSTEM_PROMPT = (
@@ -157,6 +162,10 @@ def count_tokens(text: str, model: str | None = None) -> int:
 
 def get_sources(limit: int | None = None) -> list[str]:
     return list_sources(limit=limit)
+
+
+def reset_db() -> dict[str, object]:
+    return reset_store()
 
 
 def _build_where(

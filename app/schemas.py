@@ -52,3 +52,15 @@ class CountTokensResponse(BaseModel):
 
 class SourcesResponse(BaseModel):
     sources: list[str]
+
+
+class ResetDbRequest(BaseModel):
+    confirm: bool = False
+
+
+class ResetDbResponse(BaseModel):
+    collection: str
+    before_count: int
+    after_count: int
+    reset: bool
+    errors: list[str] | None = None

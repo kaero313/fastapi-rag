@@ -4,7 +4,7 @@
 - FastAPI-based RAG service using Gemini for embeddings + chat completions and ChromaDB for persistent vector storage.
 
 ## Runtime
-- App entry: `app/main.py` with endpoints `/health`, `/ingest`, `/ingest-pdf`, `/ingest-json`, `/ingest-dir`, `/sources`, `/query`, `/count-tokens`.
+- App entry: `app/main.py` with endpoints `/health`, `/ingest`, `/ingest-pdf`, `/ingest-json`, `/ingest-dir`, `/sources`, `/query`, `/count-tokens`, `/reset-db`.
 - Start: `uvicorn app.main:app --reload`.
 
 ## Data flow

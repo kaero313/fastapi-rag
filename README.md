@@ -102,6 +102,7 @@ uvicorn app.main:app --reload
 - `GET /sources` : 인입된 source 목록 조회
 - `POST /query` : 질의 및 답변 생성
 - `POST /count-tokens` : 텍스트 토큰 수 확인
+- `POST /reset-db` : 벡터 DB 초기화
 
 ## 예시
 
@@ -157,6 +158,14 @@ uvicorn app.main:app --reload
 {
   "text": "Hello world!",
   "model": "gemini-2.5-flash"
+}
+```
+
+### DB 초기화
+
+```json
+{
+  "confirm": true
 }
 ```
 

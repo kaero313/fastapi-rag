@@ -74,3 +74,44 @@ def list_sources(limit: int | None = None) -> list[str]:
         if isinstance(meta, dict) and meta.get("source")
     }
     return sorted(sources)
+
+
+def reset_store() -> dict[str, object]:
+    _ensure_persist_dir()
+    client = chromadb.PersistentClient(path=settings.chroma_persist_dir)
+    errors: list[str] = []
+
+    collection = client.get_or_create_collection(
+        name=settings.chroma_collection,
+        metadata={"hnsw:space": "cosine"},
+    )
+    before_count = collection.count()
+
+    reset_ok = False
+    try:
+        reset_ok = bool(client.reset())
+    except Exception as exc:
+        errors.append(str(exc))
+
+    if not reset_ok:
+        try:
+            client.delete_collection(name=settings.chroma_collection)
+            reset_ok = True
+        except Exception as exc:
+            errors.append(str(exc))
+
+    collection = client.get_or_create_collection(
+        name=settings.chroma_collection,
+        metadata={"hnsw:space": "cosine"},
+    )
+    after_count = collection.count()
+
+    result: dict[str, object] = {
+        "collection": collection.name,
+        "before_count": before_count,
+        "after_count": after_count,
+        "reset": reset_ok,
+    }
+    if errors:
+        result["errors"] = errors
+    return result
