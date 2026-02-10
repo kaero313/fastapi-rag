@@ -420,429 +420,429 @@ def _split_documents(
             trimmed, trim_start, trim_end = _trim_span(raw_text, span.start, span.end)
             # 조건을 검사합니다.
             if not trimmed:
-                # Skip to the next iteration.
+                # 이번 반복을 건너뜁니다.
                 continue
-            # Start a multi-line call assigned to metadata.
+            # metadata에 대입하는 호출을 시작합니다.
             metadata = _merge_chunk_metadata(
-                # Pass the next argument.
+                # 다음 인자를 전달합니다.
                 doc.metadata,
-                # Pass the next argument.
+                # 다음 인자를 전달합니다.
                 parent_id,
-                # Pass the next argument.
+                # 다음 인자를 전달합니다.
                 index,
-                # Pass the next argument.
+                # 다음 인자를 전달합니다.
                 total,
-                # Pass the next argument.
+                # 다음 인자를 전달합니다.
                 trim_start,
-                # Pass the next argument.
+                # 다음 인자를 전달합니다.
                 trim_end,
-                # Pass the next argument.
+                # 다음 인자를 전달합니다.
                 span.tokens,
-            # End a multi-line block.
+            # 여러 줄 구문을 닫습니다.
             )
-            # Set chunk_id: str | None.
+            # chunk_id: str | None에 값을 대입합니다.
             chunk_id: str | None = None
-            # Check a condition.
+            # 조건을 검사합니다.
             if parent_id:
-                # Execute this statement.
+                # 코드를 실행합니다.
                 chunk_id = parent_id if total == 1 else f"{parent_id}::chunk-{index}"
-            # Start a multi-line call.
+            # 여러 줄 호출을 시작합니다.
             chunked.append(
-                # Start a multi-line call.
+                # 여러 줄 호출을 시작합니다.
                 DocumentIn(
-                    # Pass the id argument.
+                    # id 인자를 전달합니다.
                     id=chunk_id,
-                    # Pass the text argument.
+                    # text 인자를 전달합니다.
                     text=trimmed,
-                    # Pass the metadata argument.
+                    # metadata 인자를 전달합니다.
                     metadata=metadata,
-                # End a multi-line block.
+                # 여러 줄 구문을 닫습니다.
                 )
-            # End a multi-line block.
+            # 여러 줄 구문을 닫습니다.
             )
-    # Return a result.
+    # 값을 반환합니다.
     return chunked
 
 
-# Define the _chunk_text function.
+# _chunk_text 함수를 정의합니다.
 def _chunk_text(
-    # Function parameter text.
+    # text 매개변수입니다.
     text: str,
-    # Function parameter chunk_tokens.
+    # chunk_tokens 매개변수입니다.
     chunk_tokens: int,
-    # Function parameter chunk_overlap.
+    # chunk_overlap 매개변수입니다.
     chunk_overlap: int,
-# Close the signature and declare the return type.
+# 함수 시그니처를 닫고 반환 타입을 적습니다.
 ) -> list["_ChunkSpan"]:
-    # Set segments.
+    # segments에 값을 대입합니다.
     segments = _segments_from_text(text, chunk_tokens, chunk_overlap)
-    # Check a condition.
+    # 조건을 검사합니다.
     if not segments:
-        # Return a result.
+        # 값을 반환합니다.
         return []
 
-    # Set overlap.
+    # overlap에 값을 대입합니다.
     overlap = max(0, min(chunk_overlap, max(0, chunk_tokens - 1)))
-    # Set spans: list[_ChunkSpan].
+    # spans: list[_ChunkSpan]에 값을 대입합니다.
     spans: list[_ChunkSpan] = []
-    # Set index.
+    # index에 값을 대입합니다.
     index = 0
-    # Loop while the condition is true.
+    # 조건이 참인 동안 반복합니다.
     while index < len(segments):
-        # Set token_total.
+        # token_total에 값을 대입합니다.
         token_total = 0
-        # Set end_index.
+        # end_index에 값을 대입합니다.
         end_index = index
-        # Loop while the condition is true.
+        # 조건이 참인 동안 반복합니다.
         while end_index < len(segments):
-            # Set segment_tokens.
+            # segment_tokens에 값을 대입합니다.
             segment_tokens = segments[end_index].tokens
-            # Check a condition.
+            # 조건을 검사합니다.
             if token_total + segment_tokens > chunk_tokens and end_index > index:
-                # Exit the loop.
+                # 반복을 종료합니다.
                 break
-            # Set token_total +.
+            # token_total +에 값을 대입합니다.
             token_total += segment_tokens
-            # Set end_index +.
+            # end_index +에 값을 대입합니다.
             end_index += 1
 
-        # Set last_index.
+        # last_index에 값을 대입합니다.
         last_index = end_index - 1
-        # Set span_start.
+        # span_start에 값을 대입합니다.
         span_start = segments[index].start
-        # Set span_end.
+        # span_end에 값을 대입합니다.
         span_end = segments[last_index].end
-        # Append an item to a list.
+        # 리스트에 값을 추가합니다.
         spans.append(_ChunkSpan(span_start, span_end, token_total))
 
-        # Check a condition.
+        # 조건을 검사합니다.
         if end_index >= len(segments):
-            # Exit the loop.
+            # 반복을 종료합니다.
             break
 
-        # Check a condition.
+        # 조건을 검사합니다.
         if overlap <= 0:
-            # Set index.
+            # index에 값을 대입합니다.
             index = end_index
-            # Skip to the next iteration.
+            # 이번 반복을 건너뜁니다.
             continue
 
-        # Set back_tokens.
+        # back_tokens에 값을 대입합니다.
         back_tokens = 0
-        # Set overlap_index.
+        # overlap_index에 값을 대입합니다.
         overlap_index = last_index
-        # Loop while the condition is true.
+        # 조건이 참인 동안 반복합니다.
         while overlap_index >= index:
-            # Set segment_tokens.
+            # segment_tokens에 값을 대입합니다.
             segment_tokens = segments[overlap_index].tokens
-            # Check a condition.
+            # 조건을 검사합니다.
             if back_tokens + segment_tokens > overlap:
-                # Exit the loop.
+                # 반복을 종료합니다.
                 break
-            # Set back_tokens +.
+            # back_tokens +에 값을 대입합니다.
             back_tokens += segment_tokens
-            # Set overlap_index -.
+            # overlap_index -에 값을 대입합니다.
             overlap_index -= 1
 
-        # Set next_index.
+        # next_index에 값을 대입합니다.
         next_index = max(overlap_index + 1, index + 1)
-        # Check a condition.
+        # 조건을 검사합니다.
         if next_index <= index:
-            # Set next_index.
+            # next_index에 값을 대입합니다.
             next_index = index + 1
-        # Set index.
+        # index에 값을 대입합니다.
         index = next_index
 
-    # Return a result.
+    # 값을 반환합니다.
     return spans
 
 
-# Apply a decorator.
+# 데코레이터를 적용합니다.
 @dataclass(frozen=True)
-class _Segment:  # Define the _Segment class.
-    # Declare field start.
+class _Segment:  # _Segment 클래스를 정의합니다.
+    # start 필드를 선언합니다.
     start: int
-    # Declare field end.
+    # end 필드를 선언합니다.
     end: int
-    # Declare field tokens.
+    # tokens 필드를 선언합니다.
     tokens: int
 
 
-# Apply a decorator.
+# 데코레이터를 적용합니다.
 @dataclass(frozen=True)
-class _ChunkSpan:  # Define the _ChunkSpan class.
-    # Declare field start.
+class _ChunkSpan:  # _ChunkSpan 클래스를 정의합니다.
+    # start 필드를 선언합니다.
     start: int
-    # Declare field end.
+    # end 필드를 선언합니다.
     end: int
-    # Declare field tokens.
+    # tokens 필드를 선언합니다.
     tokens: int
 
 
-# Define the _segments_from_text function.
+# _segments_from_text 함수를 정의합니다.
 def _segments_from_text(
-    # Function parameter text.
+    # text 매개변수입니다.
     text: str,
-    # Function parameter chunk_tokens.
+    # chunk_tokens 매개변수입니다.
     chunk_tokens: int,
-    # Function parameter chunk_overlap.
+    # chunk_overlap 매개변수입니다.
     chunk_overlap: int,
-# Close the signature and declare the return type.
+# 함수 시그니처를 닫고 반환 타입을 적습니다.
 ) -> list[_Segment]:
-    # Set sentence_spans.
+    # sentence_spans에 값을 대입합니다.
     sentence_spans = _sentence_spans(text)
-    # Check a condition.
+    # 조건을 검사합니다.
     if not sentence_spans:
-        # Set sentence_spans.
+        # sentence_spans에 값을 대입합니다.
         sentence_spans = [(0, len(text))]
 
-    # Set segments: list[_Segment].
+    # segments: list[_Segment]에 값을 대입합니다.
     segments: list[_Segment] = []
-    # Start a loop.
+    # 반복문을 시작합니다.
     for start, end in sentence_spans:
-        # Set segment_text.
+        # segment_text에 값을 대입합니다.
         segment_text = text[start:end]
-        # Set token_count.
+        # token_count에 값을 대입합니다.
         token_count = _count_tokens(segment_text)
-        # Check a condition.
+        # 조건을 검사합니다.
         if token_count <= 0:
-            # Skip to the next iteration.
+            # 이번 반복을 건너뜁니다.
             continue
-        # Check a condition.
+        # 조건을 검사합니다.
         if token_count > chunk_tokens:
-            # Start a multi-line call.
+            # 여러 줄 호출을 시작합니다.
             segments.extend(
-                # Start a multi-line call.
+                # 여러 줄 호출을 시작합니다.
                 _split_span_by_tokens(
-                    # Pass the next argument.
+                    # 다음 인자를 전달합니다.
                     text,
-                    # Pass the next argument.
+                    # 다음 인자를 전달합니다.
                     start,
-                    # Pass the next argument.
+                    # 다음 인자를 전달합니다.
                     end,
-                    # Pass the next argument.
+                    # 다음 인자를 전달합니다.
                     chunk_tokens,
-                    # Pass the next argument.
+                    # 다음 인자를 전달합니다.
                     chunk_overlap,
-                # End a multi-line block.
+                # 여러 줄 구문을 닫습니다.
                 )
-            # End a multi-line block.
+            # 여러 줄 구문을 닫습니다.
             )
-        # Fallback branch.
+        # 이전 조건이 거짓일 때 실행합니다.
         else:
-            # Append an item to a list.
+            # 리스트에 값을 추가합니다.
             segments.append(_Segment(start, end, token_count))
-    # Return a result.
+    # 값을 반환합니다.
     return segments
 
 
-# Define the _split_span_by_tokens function.
+# _split_span_by_tokens 함수를 정의합니다.
 def _split_span_by_tokens(
-    # Function parameter text.
+    # text 매개변수입니다.
     text: str,
-    # Function parameter span_start.
+    # span_start 매개변수입니다.
     span_start: int,
-    # Function parameter span_end.
+    # span_end 매개변수입니다.
     span_end: int,
-    # Function parameter chunk_tokens.
+    # chunk_tokens 매개변수입니다.
     chunk_tokens: int,
-    # Function parameter chunk_overlap.
+    # chunk_overlap 매개변수입니다.
     chunk_overlap: int,
-# Close the signature and declare the return type.
+# 함수 시그니처를 닫고 반환 타입을 적습니다.
 ) -> list[_Segment]:
-    # Set tokens.
+    # tokens에 값을 대입합니다.
     tokens = _token_spans(text[span_start:span_end])
-    # Check a condition.
+    # 조건을 검사합니다.
     if not tokens:
-        # Return a result.
+        # 값을 반환합니다.
         return []
 
-    # Set overlap.
+    # overlap에 값을 대입합니다.
     overlap = max(0, min(chunk_overlap, max(0, chunk_tokens - 1)))
-    # Set segments: list[_Segment].
+    # segments: list[_Segment]에 값을 대입합니다.
     segments: list[_Segment] = []
-    # Set index.
+    # index에 값을 대입합니다.
     index = 0
-    # Loop while the condition is true.
+    # 조건이 참인 동안 반복합니다.
     while index < len(tokens):
-        # Set end_index.
+        # end_index에 값을 대입합니다.
         end_index = min(index + chunk_tokens, len(tokens))
-        # Set start_token.
+        # start_token에 값을 대입합니다.
         start_token = tokens[index][0] + span_start
-        # Set end_token.
+        # end_token에 값을 대입합니다.
         end_token = tokens[end_index - 1][1] + span_start
-        # Append an item to a list.
+        # 리스트에 값을 추가합니다.
         segments.append(_Segment(start_token, end_token, end_index - index))
 
-        # Set next_index.
+        # next_index에 값을 대입합니다.
         next_index = end_index - overlap if overlap > 0 else end_index
-        # Check a condition.
+        # 조건을 검사합니다.
         if next_index <= index:
-            # Set next_index.
+            # next_index에 값을 대입합니다.
             next_index = index + 1
-        # Set index.
+        # index에 값을 대입합니다.
         index = next_index
 
-    # Return a result.
+    # 값을 반환합니다.
     return segments
 
 
-# Define the _token_spans function.
+# _token_spans 함수를 정의합니다.
 def _token_spans(text: str) -> list[tuple[int, int]]:
-    # Return a result.
+    # 값을 반환합니다.
     return [match.span() for match in re.finditer(r"\w+|[^\w\s]", text, re.UNICODE)]
 
 
-# Define the _count_tokens function.
+# _count_tokens 함수를 정의합니다.
 def _count_tokens(text: str) -> int:
-    # Return a result.
+    # 값을 반환합니다.
     return sum(1 for _ in re.finditer(r"\w+|[^\w\s]", text, re.UNICODE))
 
 
-# Define the _sentence_spans function.
+# _sentence_spans 함수를 정의합니다.
 def _sentence_spans(text: str) -> list[tuple[int, int]]:
-    # Set spans: list[tuple[int, int]].
+    # spans: list[tuple[int, int]]에 값을 대입합니다.
     spans: list[tuple[int, int]] = []
-    # Set pattern.
+    # pattern에 값을 대입합니다.
     pattern = re.compile(r".*?(?:[.!?]+|\n+|$)", re.DOTALL)
-    # Start a loop.
+    # 반복문을 시작합니다.
     for match in pattern.finditer(text):
-        # Set start, end.
+        # start, end에 값을 대입합니다.
         start, end = match.span()
-        # Set segment.
+        # segment에 값을 대입합니다.
         segment = text[start:end]
-        # Check a condition.
+        # 조건을 검사합니다.
         if not segment.strip():
-            # Skip to the next iteration.
+            # 이번 반복을 건너뜁니다.
             continue
-        # Set leading.
+        # leading에 값을 대입합니다.
         leading = len(segment) - len(segment.lstrip())
-        # Set trailing.
+        # trailing에 값을 대입합니다.
         trailing = len(segment) - len(segment.rstrip())
-        # Set span_start.
+        # span_start에 값을 대입합니다.
         span_start = start + leading
-        # Set span_end.
+        # span_end에 값을 대입합니다.
         span_end = end - trailing
-        # Check a condition.
+        # 조건을 검사합니다.
         if span_start < span_end:
-            # Append an item to a list.
+            # 리스트에 값을 추가합니다.
             spans.append((span_start, span_end))
-    # Return a result.
+    # 값을 반환합니다.
     return spans
 
 
-# Define the _trim_span function.
+# _trim_span 함수를 정의합니다.
 def _trim_span(text: str, start: int, end: int) -> tuple[str, int, int]:
-    # Check a condition.
+    # 조건을 검사합니다.
     if not text:
-        # Return a result.
+        # 값을 반환합니다.
         return "", start, end
-    # Set leading.
+    # leading에 값을 대입합니다.
     leading = len(text) - len(text.lstrip())
-    # Set trailing.
+    # trailing에 값을 대입합니다.
     trailing = len(text) - len(text.rstrip())
-    # Set trimmed.
+    # trimmed에 값을 대입합니다.
     trimmed = text.strip()
-    # Return a result.
+    # 값을 반환합니다.
     return trimmed, start + leading, end - trailing
 
 
-# Define the _merge_chunk_metadata function.
+# _merge_chunk_metadata 함수를 정의합니다.
 def _merge_chunk_metadata(
-    # Function parameter metadata.
+    # metadata 매개변수입니다.
     metadata: dict[str, object] | None,
-    # Function parameter parent_id.
+    # parent_id 매개변수입니다.
     parent_id: str | None,
-    # Function parameter index.
+    # index 매개변수입니다.
     index: int,
-    # Function parameter total.
+    # total 매개변수입니다.
     total: int,
-    # Function parameter start.
+    # start 매개변수입니다.
     start: int,
-    # Function parameter end.
+    # end 매개변수입니다.
     end: int,
-    # Function parameter tokens.
+    # tokens 매개변수입니다.
     tokens: int,
-# Close the signature and declare the return type.
+# 함수 시그니처를 닫고 반환 타입을 적습니다.
 ) -> dict[str, object]:
-    # Set merged.
+    # merged에 값을 대입합니다.
     merged = dict(metadata) if isinstance(metadata, dict) else {}
-    # Check a condition.
+    # 조건을 검사합니다.
     if parent_id:
-        # Execute this statement.
+        # 코드를 실행합니다.
         merged.setdefault("parent_id", parent_id)
-    # Set merged["chunk_index"].
+    # merged["chunk_index"]에 값을 대입합니다.
     merged["chunk_index"] = index
-    # Set merged["chunk_total"].
+    # merged["chunk_total"]에 값을 대입합니다.
     merged["chunk_total"] = total
-    # Set merged["chunk_start"].
+    # merged["chunk_start"]에 값을 대입합니다.
     merged["chunk_start"] = start
-    # Set merged["chunk_end"].
+    # merged["chunk_end"]에 값을 대입합니다.
     merged["chunk_end"] = end
-    # Set merged["chunk_tokens"].
+    # merged["chunk_tokens"]에 값을 대입합니다.
     merged["chunk_tokens"] = tokens
-    # Return a result.
+    # 값을 반환합니다.
     return merged
 
 
-# Define the _rerank_results function.
+# _rerank_results 함수를 정의합니다.
 def _rerank_results(
-    # Function parameter query.
+    # query 매개변수입니다.
     query: str,
-    # Function parameter ids.
+    # ids 매개변수입니다.
     ids: list[str],
-    # Function parameter documents.
+    # documents 매개변수입니다.
     documents: list[str],
-    # Function parameter metadatas.
+    # metadatas 매개변수입니다.
     metadatas: list[dict[str, object] | None],
-    # Function parameter distances.
+    # distances 매개변수입니다.
     distances: list[float | None],
-# Close the signature and declare the return type.
+# 함수 시그니처를 닫고 반환 타입을 적습니다.
 ) -> list[tuple[str, str, dict[str, object] | None, float | None]]:
-    # Set query_lower.
+    # query_lower에 값을 대입합니다.
     query_lower = query.lower()
-    # Set terms.
+    # terms에 값을 대입합니다.
     terms = [term for term in query_lower.split() if term]
 
-    # Define the lexical_score function.
+    # lexical_score 함수를 정의합니다.
     def lexical_score(text: str) -> int:
-        # Check a condition.
+        # 조건을 검사합니다.
         if not text:
-            # Return a result.
+            # 값을 반환합니다.
             return 0
-        # Set lowered.
+        # lowered에 값을 대입합니다.
         lowered = text.lower()
-        # Set score.
+        # score에 값을 대입합니다.
         score = 0
-        # Check a condition.
+        # 조건을 검사합니다.
         if query_lower and query_lower in lowered:
-            # Set score +.
+            # score +에 값을 대입합니다.
             score += len(terms) + 1
-        # Start a loop.
+        # 반복문을 시작합니다.
         for term in terms:
-            # Check a condition.
+            # 조건을 검사합니다.
             if term in lowered:
-                # Set score +.
+                # score +에 값을 대입합니다.
                 score += 1
-        # Return a result.
+        # 값을 반환합니다.
         return score
 
-    # Set scored: list[tuple[int, float, int, str, str, dict[str, object] | None, float | None]].
+    # scored: list[tuple[int, float, int, str, str, dict[str, object] | None, float | None]]에 값을 대입합니다.
     scored: list[tuple[int, float, int, str, str, dict[str, object] | None, float | None]] = []
-    # Start a multi-line call.
+    # 여러 줄 호출을 시작합니다.
     for index, (doc_id, text, metadata, distance) in enumerate(
-        # Execute this statement.
+        # 코드를 실행합니다.
         zip(ids, documents, metadatas, distances)
-    # Close the multi-line statement.
+    # 여러 줄 구문을 닫습니다.
     ):
-        # Set score.
+        # score에 값을 대입합니다.
         score = lexical_score(text)
-        # Set dist_value.
+        # dist_value에 값을 대입합니다.
         dist_value = float(distance) if distance is not None else 1.0
-        # Append an item to a list.
+        # 리스트에 값을 추가합니다.
         scored.append((score, dist_value, index, doc_id, text, metadata, distance))
 
-    # Set scored.sort(key.
+    # scored.sort(key에 값을 대입합니다.
     scored.sort(key=lambda item: (-item[0], item[1], item[2]))
-    # Return a result.
+    # 값을 반환합니다.
     return [(doc_id, text, metadata, distance) for _, _, _, doc_id, text, metadata, distance in scored]
