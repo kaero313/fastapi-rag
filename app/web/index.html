@@ -3,61 +3,74 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>RAG Chat</title>
+    <title>RAG Chat Console</title>
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
-    <div class="backdrop">
-      <div class="orb orb-a"></div>
-      <div class="orb orb-b"></div>
-      <div class="grid"></div>
+    <div class="ambient" aria-hidden="true">
+      <div class="glow glow-a"></div>
+      <div class="glow glow-b"></div>
+      <div class="mesh"></div>
     </div>
-    <main class="app">
-      <header class="hero">
-        <div class="brand">
+
+    <main class="layout">
+      <aside class="sidebar">
+        <section class="card brand-card">
           <div class="logo">RAG</div>
           <div class="brand-text">
             <h1>RAG Chat</h1>
-            <p>Ask your documents. Gemini handles the answers.</p>
+            <p>Ask your indexed docs. Gemini answers with retrieved context.</p>
           </div>
-        </div>
-        <div class="status" id="status">
+        </section>
+
+        <div class="status card" id="status">
           <span class="dot"></span>
           <span class="label">checking</span>
         </div>
-      </header>
-      <section class="chat">
+
+        <section class="card filters">
+          <h2>Retrieval Options</h2>
+
+          <label class="control">
+            <span>top_k</span>
+            <input id="topK" type="number" min="1" max="12" value="4" />
+          </label>
+
+          <label class="control">
+            <span>source</span>
+            <select id="sourceSelect" multiple>
+              <option value="">All sources</option>
+            </select>
+          </label>
+
+          <label class="control">
+            <span>page range</span>
+            <div class="range">
+              <input id="pageGte" type="number" min="1" placeholder="from" />
+              <input id="pageLte" type="number" min="1" placeholder="to" />
+            </div>
+          </label>
+        </section>
+
+        <button type="button" class="ghost block" id="clear">Clear Chat</button>
+      </aside>
+
+      <section class="chat-panel card">
+        <header class="chat-header">
+          <h2>Assistant</h2>
+          <p>Type naturally. Answers are grounded in your stored chunks.</p>
+        </header>
+
         <div id="messages" class="messages">
           <div class="message assistant intro">
             <div class="bubble">
               <div class="role">assistant</div>
-              <div class="text">
-                Drop a question to start. Example: "What is RAG?"
-              </div>
+              <div class="text">Drop a question to start. Example: "What is RAG?"</div>
             </div>
           </div>
         </div>
+
         <form id="composer" class="composer">
-          <div class="controls">
-            <label class="control">
-              <span>top_k</span>
-              <input id="topK" type="number" min="1" max="12" value="4" />
-            </label>
-            <label class="control control-wide">
-              <span>source</span>
-              <select id="sourceSelect" multiple>
-                <option value="">All sources</option>
-              </select>
-            </label>
-            <label class="control">
-              <span>page</span>
-              <div class="range">
-                <input id="pageGte" type="number" min="1" placeholder="from" />
-                <input id="pageLte" type="number" min="1" placeholder="to" />
-              </div>
-            </label>
-            <button type="button" class="ghost" id="clear">Clear</button>
-          </div>
           <div class="input-row">
             <textarea
               id="prompt"
@@ -66,10 +79,11 @@
             ></textarea>
             <button type="submit" id="send">Send</button>
           </div>
-          <div class="hint">Shift+Enter for a new line.</div>
+          <div class="hint">Enter to send, Shift+Enter for a new line.</div>
         </form>
       </section>
     </main>
+
     <script src="/static/app.js"></script>
   </body>
 </html>
